@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客戶需求調查問卷</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             background-color: #f3f4f6;
@@ -82,28 +83,57 @@
     </div>
 
     <script>
-        document.getElementById('demandForm').addEventListener('submit', function(e) {
+        // ===== Supabase 配置 =====
+        // 請將以下值替換為您的 Supabase 項目資訊
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // 例如: https://your-project.supabase.co
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 您的 Supabase Anon Key
+
+        // 初始化 Supabase 客戶端
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ===== 表單提交事件 =====
+        document.getElementById('demandForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const messageEl = document.getElementById('message');
             
-            // 這裡模擬提交邏輯
-            // 實際情況中，前端 HTML 需透過 API 傳送至後端資料庫
-            const formData = new FormData(this);
-            const interests = formData.getAll('interests');
-            
-            console.log('提交的數據：', {
-                company: formData.get('company'),
-                name: formData.get('customer_name'),
-                phone: formData.get('phone'),
-                interests: interests,
-                demo_date: formData.get('demo_date')
-            });
+            try {
+                const formData = new FormData(this);
+                const interests = formData.getAll('interests');
 
-            messageEl.textContent = '感謝提交！您的需求已記錄。';
-            messageEl.classList.remove('hidden', 'text-red-500');
-            messageEl.classList.add('text-green-600');
-            
-            this.reset();
+                // 準備要插入的數據
+                const data = {
+                    company_name: formData.get('company'),
+                    customer_name: formData.get('customer_name'),
+                    phone_number: formData.get('phone'),
+                    interests: interests, // Supabase 會自動轉換為 TEXT[]
+                    demo_date: formData.get('demo_date')
+                };
+
+                // 插入數據到 Supabase
+                const { data: insertedData, error } = await supabase
+                    .from('customer_demands')
+                    .insert([data]);
+
+                if (error) {
+                    throw error;
+                }
+
+                // 成功提交
+                messageEl.textContent = '✓ 感謝提交！您的需求已成功記錄。';
+                messageEl.classList.remove('hidden', 'text-red-500');
+                messageEl.classList.add('text-green-600');
+                
+                console.log('提交成功:', insertedData);
+                this.reset();
+
+            } catch (error) {
+                // 錯誤處理
+                console.error('提交失敗:', error);
+                messageEl.textContent = `✗ 提交失敗: ${error.message || '請檢查您的網絡連接或 Supabase 配置。'}`;
+                messageEl.classList.remove('hidden', 'text-green-600');
+                messageEl.classList.add('text-red-500');
+            }
         });
     </script>
 </body>
