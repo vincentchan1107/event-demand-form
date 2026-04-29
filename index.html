@@ -7,50 +7,51 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #f3f4f6; }
+        body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .form-container { max-width: 500px; margin: 20px auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        input[type="checkbox"] { width: 1.5rem; height: 1.5rem; }
     </style>
 </head>
 <body class="p-4">
     <div class="form-container">
         <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Event 客戶需求登記</h1>
-        <form id="demandForm" onsubmit="handleSubmit(event)" class="space-y-4">
+        <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">客戶公司</label>
-                <input type="text" id="company" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入公司名稱">
+                <input type="text" id="company" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="輸入公司名稱">
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">客戶名稱</label>
-                <input type="text" id="customer_name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入您的姓名">
+                <input type="text" id="customer_name" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="輸入您的姓名">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
-                <input type="tel" id="phone" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入聯絡電話">
+                <input type="tel" id="phone" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="輸入聯絡電話">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">對什麼有興趣 (可多選)</label>
-                <div class="space-y-2">
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer">
-                        <input type="checkbox" name="interests" value="AI prompt 指令" class="w-5 h-5 text-blue-600">
+                <div class="space-y-2" id="interestsGroup">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <input type="checkbox" value="AI prompt 指令" class="interest-check">
                         <span class="ml-3 text-gray-700">AI prompt 指令</span>
                     </label>
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer">
-                        <input type="checkbox" name="interests" value="AI 剪片" class="w-5 h-5 text-blue-600">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <input type="checkbox" value="AI 剪片" class="interest-check">
                         <span class="ml-3 text-gray-700">AI 剪片</span>
                     </label>
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer">
-                        <input type="checkbox" name="interests" value="AI AGENT" class="w-5 h-5 text-blue-600">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <input type="checkbox" value="AI AGENT" class="interest-check">
                         <span class="ml-3 text-gray-700">AI AGENT</span>
                     </label>
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer">
-                        <input type="checkbox" name="interests" value="AI 文件管理" class="w-5 h-5 text-blue-600">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <input type="checkbox" value="AI 文件管理" class="interest-check">
                         <span class="ml-3 text-gray-700">AI 文件管理</span>
                     </label>
-                    <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer">
-                        <input type="checkbox" name="interests" value="AI 工作流程管理" class="w-5 h-5 text-blue-600">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <input type="checkbox" value="AI 工作流程管理" class="interest-check">
                         <span class="ml-3 text-gray-700">AI 工作流程管理</span>
                     </label>
                 </div>
@@ -58,67 +59,77 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">想約 DEMO 日期</label>
-                <input type="date" id="demo_date" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="date" id="demo_date" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 mt-6">
-                提交需求
+            <button type="button" id="submitBtn" onclick="sendData()" class="w-full bg-blue-600 text-white font-bold py-4 px-4 rounded-lg hover:bg-blue-700 transition duration-200 mt-6 shadow-lg">
+                確認提交
             </button>
-        </form>
+        </div>
         
-        <p id="message" class="mt-4 text-center text-sm hidden"></p>
+        <p id="statusMsg" class="mt-4 text-center text-sm font-bold hidden"></p>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://hazxfinkokifujqlmkcs.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhenhmaW5rb2tpZnVqcWxta2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODQ2MzcsImV4cCI6MjA5MjM2MDYzN30.y3njujhhcoZW5WTirqkGvWbv962e4F2whVVP0VeQ6ic';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 確保 SDK 載入
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch(e) {
+            alert("Supabase SDK 載入失敗，請檢查網路連線");
+        }
 
-        async function handleSubmit(event) {
-            event.preventDefault();
+        async function sendData() {
             const btn = document.getElementById('submitBtn');
-            const msg = document.getElementById('message');
+            const status = document.getElementById('statusMsg');
             
-            // 禁用按鈕防止重複點擊
+            // 獲取數值
+            const company = document.getElementById('company').value;
+            const name = document.getElementById('customer_name').value;
+            const phone = document.getElementById('phone').value;
+            const date = document.getElementById('demo_date').value;
+            
+            if(!company || !name || !phone || !date) {
+                alert("請填寫所有必填欄位！");
+                return;
+            }
+
+            const interests = Array.from(document.querySelectorAll('.interest-check:checked')).map(el => el.value);
+
+            // UI 狀態更新
             btn.disabled = true;
-            btn.innerText = '正在提交...';
-            msg.classList.add('hidden');
+            btn.innerText = '正在處理中...';
+            status.innerText = '正在連接資料庫...';
+            status.className = 'mt-4 text-center text-sm font-bold text-blue-600';
+            status.classList.remove('hidden');
 
             try {
-                // 獲取興趣項目
-                const interests = Array.from(document.querySelectorAll('input[name="interests"]:checked')).map(el => el.value);
-                
-                const payload = {
-                    company_name: document.getElementById('company').value,
-                    customer_name: document.getElementById('customer_name').value,
-                    phone_number: document.getElementById('phone').value,
-                    interests: interests,
-                    demo_date: document.getElementById('demo_date').value
-                };
-
-                console.log("正在提交數據:", payload);
-
                 const { data, error } = await supabase
                     .from('customer_demands')
-                    .insert([payload]);
+                    .insert([{
+                        company_name: company,
+                        customer_name: name,
+                        phone_number: phone,
+                        interests: interests,
+                        demo_date: date
+                    }]);
 
                 if (error) throw error;
 
-                // 成功處理
-                msg.innerText = '✓ 感謝提交！您的需求已成功記錄。';
-                msg.className = 'mt-4 text-center text-sm text-green-600 font-bold';
-                msg.classList.remove('hidden');
-                document.getElementById('demandForm').reset();
-                
+                alert("✅ 提交成功！感謝您的參與。");
+                location.reload(); // 成功後重整頁面
+
             } catch (err) {
-                console.error("提交錯誤:", err);
-                msg.innerText = '❌ 提交失敗: ' + (err.message || '請檢查網路或稍後再試');
-                msg.className = 'mt-4 text-center text-sm text-red-600 font-bold';
-                msg.classList.remove('hidden');
+                console.error(err);
+                alert("❌ 提交失敗\n原因: " + err.message);
+                status.innerText = '提交失敗，請查看彈窗提示';
+                status.className = 'mt-4 text-center text-sm font-bold text-red-600';
             } finally {
                 btn.disabled = false;
-                btn.innerText = '提交需求';
+                btn.innerText = '確認提交';
             }
         }
     </script>
