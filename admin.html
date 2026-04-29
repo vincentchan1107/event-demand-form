@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - 客戶資料管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-blue {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-green {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <!-- 登入界面 -->
+    <div id="loginContainer" class="admin-container max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Admin 登入</h1>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
+                <input type="password" id="adminPassword" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入管理員密碼">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
+                登入
+            </button>
+        </form>
+        <p id="loginMessage" class="mt-4 text-center text-sm hidden"></p>
+    </div>
+
+    <!-- 資料管理界面 -->
+    <div id="dataContainer" class="hidden">
+        <div class="admin-container">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-blue-600">客戶資料管理</h1>
+                <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                    登出
+                </button>
+            </div>
+
+            <!-- 搜尋與篩選 -->
+            <div class="mb-4 flex gap-2">
+                <input type="text" id="searchBox" placeholder="搜尋公司或客戶名稱..." class="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <button id="refreshBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    重新載入
+                </button>
+            </div>
+
+            <!-- 資料表 -->
+            <div class="overflow-x-auto">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>客戶公司</th>
+                            <th>客戶名稱</th>
+                            <th>聯絡電話</th>
+                            <th>興趣項目</th>
+                            <th>DEMO 日期</th>
+                            <th>登記時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="6" class="text-center text-gray-500 py-8">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 統計資訊 -->
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-gray-700">
+                    總記錄數: <span id="totalCount" class="font-bold text-blue-600">0</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== Supabase 配置 =====
+        const SUPABASE_URL = 'https://hazxfinkokifujqlmkcs.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhenhmaW5rb2tpZnVqcWxta2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODQ2MzcsImV4cCI6MjA5MjM2MDYzN30.y3njujhhcoZW5WTirqkGvWbv962e4F2whVVP0VeQ6ic';
+        const ADMIN_PASSWORD = 'admin123'; // 簡單密碼，實際應用中應使用更安全的方式
+
+        // 初始化 Supabase 客戶端
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ===== 登入邏輯 =====
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            const messageEl = document.getElementById('loginMessage');
+
+            if (password === ADMIN_PASSWORD) {
+                localStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('dataContainer').classList.remove('hidden');
+                loadData();
+            } else {
+                messageEl.textContent = '✗ 密碼錯誤，請重試。';
+                messageEl.classList.remove('hidden', 'text-green-600');
+                messageEl.classList.add('text-red-600');
+            }
+        });
+
+        // ===== 登出邏輯 =====
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('adminLoggedIn');
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('dataContainer').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+            document.getElementById('adminPassword').focus();
+        });
+
+        // ===== 載入資料 =====
+        async function loadData() {
+            try {
+                const { data, error } = await supabase
+                    .from('customer_demands')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                displayData(data);
+            } catch (error) {
+                console.error('載入失敗:', error);
+                alert('載入資料失敗: ' + error.message);
+            }
+        }
+
+        // ===== 顯示資料 =====
+        function displayData(data) {
+            const tableBody = document.getElementById('tableBody');
+            const totalCount = document.getElementById('totalCount');
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500 py-8">暫無資料</td></tr>';
+                totalCount.textContent = '0';
+                return;
+            }
+
+            tableBody.innerHTML = data.map(row => `
+                <tr>
+                    <td class="font-medium">${row.company_name}</td>
+                    <td>${row.customer_name}</td>
+                    <td>${row.phone_number}</td>
+                    <td>
+                        ${(row.interests || []).map(interest => 
+                            `<span class="badge badge-blue mr-1 mb-1 inline-block">${interest}</span>`
+                        ).join('')}
+                    </td>
+                    <td>${new Date(row.demo_date).toLocaleDateString('zh-Hant-HK')}</td>
+                    <td class="text-sm text-gray-500">${new Date(row.created_at).toLocaleString('zh-Hant-HK')}</td>
+                </tr>
+            `).join('');
+
+            totalCount.textContent = data.length;
+        }
+
+        // ===== 搜尋功能 =====
+        document.getElementById('searchBox').addEventListener('input', async function() {
+            const searchTerm = this.value.toLowerCase();
+            try {
+                const { data, error } = await supabase
+                    .from('customer_demands')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const filtered = data.filter(row => 
+                    row.company_name.toLowerCase().includes(searchTerm) ||
+                    row.customer_name.toLowerCase().includes(searchTerm)
+                );
+
+                displayData(filtered);
+            } catch (error) {
+                console.error('搜尋失敗:', error);
+            }
+        });
+
+        // ===== 重新載入按鈕 =====
+        document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+        // ===== 頁面載入時檢查登入狀態 =====
+        window.addEventListener('load', function() {
+            if (localStorage.getItem('adminLoggedIn') === 'true') {
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('dataContainer').classList.remove('hidden');
+                loadData();
+            }
+        });
+    </script>
+</body>
+</html>
