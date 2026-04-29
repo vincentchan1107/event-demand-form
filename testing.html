@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing - WhatsApp 感謝訊息</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .container { max-width: 500px; width: 100%; margin: 20px; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        input { -webkit-appearance: none; appearance: none; }
+        input[type="tel"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        input[type="tel"]:focus { border-color: #25d366; box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1); }
+        button { -webkit-appearance: none; appearance: none; }
+        .btn-whatsapp {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 16px;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        }
+        .btn-whatsapp:active { transform: scale(0.98); }
+        .btn-whatsapp:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status { margin-top: 16px; padding: 12px; border-radius: 8px; text-align: center; font-size: 14px; font-weight: bold; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .info-box { background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 13px; color: #0c4a6e; }
+        .whatsapp-icon { display: inline-block; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">
+            <span class="whatsapp-icon">💬</span> WhatsApp 感謝訊息
+        </h1>
+        <p class="text-center text-gray-600 mb-6 text-sm">輸入客戶電話號碼，發送感謝訊息</p>
+
+        <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">客戶電話號碼</label>
+            <input type="tel" id="phoneInput" placeholder="例如: +852 9876 5432 或 852-9876-5432" maxlength="20">
+            
+            <button class="btn-whatsapp" onclick="sendWhatsApp()">
+                <span class="whatsapp-icon">📱</span> 發送 WhatsApp 訊息
+            </button>
+            
+            <div id="status" class="hidden status"></div>
+
+            <div class="info-box">
+                <strong>ℹ️ 使用說明：</strong><br>
+                1. 輸入客戶的 WhatsApp 電話號碼（包含國碼）<br>
+                2. 點擊「發送」按鈕<br>
+                3. 系統會跳轉到 WhatsApp，訊息已預填<br>
+                4. 在 WhatsApp 中點擊「傳送」即可
+            </div>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <p class="text-center text-xs text-gray-500">
+                <a href="./" class="text-blue-600 hover:underline">← 返回問卷</a> | 
+                <a href="./admin.html" class="text-blue-600 hover:underline">查看名單 →</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function formatPhoneNumber(phone) {
+            // 移除所有非數字字符，除了 + 號
+            let cleaned = phone.replace(/[^\d+]/g, '');
+            
+            // 如果沒有 + 號，假設是香港號碼，加上 +852
+            if (!cleaned.startsWith('+')) {
+                // 移除開頭的 0（如果有）
+                if (cleaned.startsWith('0')) {
+                    cleaned = cleaned.substring(1);
+                }
+                cleaned = '+852' + cleaned;
+            }
+            
+            return cleaned;
+        }
+
+        function sendWhatsApp() {
+            const phoneInput = document.getElementById('phoneInput').value.trim();
+            const statusDiv = document.getElementById('status');
+            
+            if (!phoneInput) {
+                statusDiv.innerText = '❌ 請輸入電話號碼';
+                statusDiv.className = 'status error';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+
+            const phone = formatPhoneNumber(phoneInput);
+            
+            // 驗證電話號碼格式
+            if (!/^\+\d{10,15}$/.test(phone)) {
+                statusDiv.innerText = '❌ 電話號碼格式不正確，請確保包含國碼（如 +852）';
+                statusDiv.className = 'status error';
+                statusDiv.classList.remove('hidden');
+                return;
+            }
+
+            // 感謝訊息
+            const message = encodeURIComponent(
+                '感謝您蒞臨我們的 AI EVENT 活動！\n\n' +
+                '我們很高興認識您，期待與您進一步合作。\n\n' +
+                '如有任何問題，歡迎隨時聯繫我們。'
+            );
+
+            // WhatsApp Click to Chat 連結
+            const whatsappURL = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
+
+            statusDiv.innerText = '✓ 正在跳轉到 WhatsApp...';
+            statusDiv.className = 'status success';
+            statusDiv.classList.remove('hidden');
+
+            // 延遲後跳轉，讓用戶看到成功提示
+            setTimeout(() => {
+                window.open(whatsappURL, '_blank');
+            }, 500);
+        }
+
+        // 按 Enter 鍵也能發送
+        document.getElementById('phoneInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendWhatsApp();
+            }
+        });
+    </script>
+</body>
+</html>
