@@ -63,17 +63,34 @@
             tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8">正在從資料庫抓取最新資料...</td></tr>';
             
             try {
-                const { data, error } = await supabaseClient
+                console.log("正在嘗試連線至 Supabase...");
+                const { data, error, status, statusText } = await supabaseClient
                     .from('customer_demands')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) throw error;
-                allData = data;
+                if (error) {
+                    console.error("Supabase 返回錯誤:", error);
+                    throw error;
+                }
+                
+                console.log("成功獲取數據，狀態碼:", status, "數據長度:", data ? data.length : 0);
+                allData = data || [];
                 renderTable(allData);
+                
+                if (allData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-orange-500 font-bold">
+                        ⚠️ 目前資料庫中沒有任何記錄。<br>
+                        <span class="text-xs font-normal text-gray-500">連線狀態: ${status} ${statusText}</span>
+                    </td></tr>`;
+                }
             } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">❌ 載入失敗: ${err.message}</td></tr>`;
+                console.error("捕獲到異常:", err);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">
+                    ❌ 載入失敗<br>
+                    <span class="text-sm font-normal">${err.message || '未知錯誤'}</span><br>
+                    <span class="text-xs font-normal text-gray-400">請檢查 Supabase 的 RLS 策略是否已開啟 Select 權限。</span>
+                </td></tr>`;
             }
         }
 
